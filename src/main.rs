@@ -8,10 +8,10 @@ fn main() {
     let height = 800;
     let mut img: RgbImage = ImageBuffer::new(width, height);
     let screen_dim = Point::new(width as f64, height as f64, 0.);
+    let camera = Point::new(-2., -2., -5.);
+    let look_at = Point::ZERO;
 
     for (x, y, pixel) in img.enumerate_pixels_mut() {
-        let camera = Point::new(0., 0., -1.);
-        let look_at = Point::ZERO;
         let uv = normalize_screen_coords(Point::new(x as f64, y as f64, 0.), screen_dim);
         let ray_dir = get_camera_ray_dir(uv, camera, look_at);
         *pixel = render(camera, ray_dir);
@@ -62,15 +62,16 @@ fn render(camera: Point, dir: Point) -> Rgb<u8> {
 }
 
 fn cast_ray(cam_pos: Point, cam_dir: Point) -> f64 {
-    let tmax = 20.0;
+    let tmax = 100.;
     let mut t = 0.0;
 
     for _ in 0..MAX_TRACE_STEPS {
-        let res = estimate_distance(cam_pos.add(cam_dir.mul_scalar(t)));
+        let pos = cam_pos.add(cam_dir.mul_scalar(t));
+        let res = estimate_distance_tri2(pos);
         if res < MIN_DIST * t {
             return t;
         } else if res > tmax {
-            return -1.0;
+            return -1.;
         }
         t += res;
     }
@@ -78,11 +79,76 @@ fn cast_ray(cam_pos: Point, cam_dir: Point) -> f64 {
     -1.0
 }
 
-fn estimate_distance(pos: Point) -> f64 {
+fn estimate_distance_sphere(pos: Point) -> f64 {
     pos.sub(Point::new(0., 0., 10.)).length() - 3.0
 }
 
-#[derive(Copy, Clone)]
+fn estimate_distance(mut z: Point) -> f64 {
+    z.x = z.x % 1. - 0.5;
+    z.y = z.y % 1. - 0.5;
+    return z.length() - 0.3;
+}
+
+fn estimate_distance_tri2(mut z: Point) -> f64 {
+    let mut n = 0;
+    let iterations = 10;
+    let offset = Point::new(1., 1., 1.);
+    let scale = 2.0;
+    while n < iterations {
+        if z.x + z.y < 0. {
+            z.x = z.x.abs();
+            z.y = z.y.abs();
+        } // fold 1
+        if z.x + z.z < 0. {
+            z.x = z.x.abs();
+            z.z = z.z.abs();
+        } // fold 2
+        if z.y + z.z < 0. {
+            z.z = z.z.abs();
+            z.y = z.y.abs();
+        } // fold 3
+        z = z.mul_scalar(scale).sub(offset.mul_scalar(scale - 1.0));
+        n += 1;
+    }
+    return (z.length()) * scale.powf(-n as f64);
+}
+
+fn estimate_distance_tri(mut z: Point) -> f64 {
+    let a1 = Point::new(1., 1., 1.);
+    let a2 = Point::new(-1., -1., 1.);
+    let a3 = Point::new(1., -1., -1.);
+    let a4 = Point::new(-1., 1., -1.);
+    let mut c;
+    let mut n = 0;
+    let mut dist;
+    let mut d;
+    let scale = 2.;
+    let iterations = 15;
+    while n < iterations {
+        c = a1;
+        dist = z.sub(a1).length();
+        d = z.sub(a2).length();
+        if d < dist {
+            c = a2;
+            dist = d;
+        }
+        d = z.sub(a3).length();
+        if d < dist {
+            c = a3;
+            dist = d;
+        }
+        d = z.sub(a4).length();
+        if d < dist {
+            c = a4;
+        }
+        z = z.mul_scalar(scale).sub(c.mul_scalar(scale - 1.0));
+        n += 1;
+    }
+
+    return z.length() * scale.powf(-n as f64);
+}
+
+#[derive(Copy, Clone, Debug)]
 struct Point {
     x: f64,
     y: f64,
