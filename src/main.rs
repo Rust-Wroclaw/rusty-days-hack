@@ -1,18 +1,26 @@
-use image::{ImageBuffer, Rgb, RgbImage};
+use image::imageops::FilterType;
+use image::{DynamicImage, ImageBuffer, Rgb, RgbImage};
 
-const MAX_TRACE_STEPS: usize = 200;
+const MAX_TRACE_STEPS: usize = 1000;
 const MIN_DIST: f64 = 0.001;
-const MAX_DIST: f64 = 100.0;
+const MAX_DIST: f64 = 1000.0;
 
 fn main() {
+    let width = 1920;
+    let height = 1080;
+    let ssaa = 2;
+
     for fractal_type in &[
         FractalType::Spheres,
         FractalType::Triangles,
         FractalType::TrianglesWithFold,
     ] {
-        let img_buffer = img(800, 800, *fractal_type);
-        img_buffer
-            .save(&format!("fractal-{:?}.png", fractal_type))
+        let filename = format!("fractal-{:?}.png", fractal_type);
+        println!("Creating {}", filename);
+        let img_buffer = img(width * ssaa, height * ssaa, *fractal_type);
+        DynamicImage::ImageRgb8(img_buffer)
+            .resize(width, height, FilterType::Lanczos3)
+            .save(&filename)
             .unwrap();
     }
 }
@@ -142,7 +150,7 @@ fn estimate_distance_tri(mut z: Point) -> f64 {
     let mut dist;
     let mut d;
     let scale = 2.;
-    let iterations = 15;
+    let iterations = 10;
     while n < iterations {
         c = a1;
         dist = z.sub(a1).length();
