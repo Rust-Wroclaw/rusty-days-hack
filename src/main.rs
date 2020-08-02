@@ -23,6 +23,7 @@ fn create_images<T: fractals::Fractal>() {
         ColorType::BlackAndWhite,
         ColorType::ColorByDistanceValue,
         ColorType::ColorDiffuse,
+        ColorType::ColorFixed,
     ] {
         create_image::<T>(*color_type)
     }

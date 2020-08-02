@@ -86,6 +86,20 @@ pub trait Fractal {
                     (b * light_val) as u8,
                 ])
             }
+            ColorType::ColorFixed => {
+                let (r, g, b) = (80., 140., 50.);
+                let mut light_val = 0.0;
+                if p.length() < Self::MAX_DIST {
+                    light_val = Self::get_light(p);
+                    light_val = light_val.powf(0.4545);
+                }
+
+                Rgb([
+                    (r * light_val) as u8,
+                    (g * light_val) as u8,
+                    (b * light_val) as u8,
+                ])
+            }
         }
     }
 
@@ -132,16 +146,14 @@ impl Fractal for Triangles {
         let offset = 1.0;
         let scale = 2.0;
         while n < iterations {
+            z = z.rotate(Point::new(0.2, 0., 0.3));
             if z.x + z.y < 0. {
-                // fold 1
                 invert_and_swap(&mut z.x, &mut z.y);
             }
             if z.x + z.z < 0. {
-                // fold 2
                 invert_and_swap(&mut z.x, &mut z.z);
             }
             if z.y + z.z < 0. {
-                // fold 3
                 invert_and_swap(&mut z.z, &mut z.y);
             }
             z = z * scale - offset * (scale - 1.0);
@@ -161,12 +173,14 @@ impl Fractal for Squares {
         let mut r = z.dot(z);
         let mut i = 0;
         let iterations = 10;
-        let cx = 1.;
-        let cy = 1.;
-        let cz = 1.;
+        let cx = 2.;
+        let cy = 0.8;
+        let cz = 1.5;
         let scale = 3.;
         let bailout = 1000.;
         while i < iterations && r < bailout {
+            z = z.rotate(Point::new(0., 0.4, 0.));
+
             z = z.abs();
             if z.x - z.y < 0. {
                 mem::swap(&mut z.x, &mut z.y);
@@ -181,6 +195,8 @@ impl Fractal for Squares {
             z.z -= 0.5 * cz * (scale - 1.) / scale;
             z.z = -z.z.abs();
             z.z += 0.5 * cz * (scale - 1.) / scale;
+
+            z = z.rotate(Point::new(0., 0., 0.2));
 
             z.x = scale * z.x - cx * (scale - 1.);
             z.y = scale * z.y - cy * (scale - 1.);
@@ -204,12 +220,13 @@ pub enum ColorType {
     BlackAndWhite,
     ColorByDistanceValue,
     ColorDiffuse,
+    ColorFixed,
 }
 
 impl ColorType {
     fn background_color(&self, uv: Point) -> Option<Rgb<u8>> {
         match self {
-            ColorType::BlackAndWhite | ColorType::ColorDiffuse => {
+            ColorType::BlackAndWhite | ColorType::ColorDiffuse | ColorType::ColorFixed => {
                 Some(Rgb([(100.0 - uv.distance(Point::ZERO) * 50.0) as u8; 3]))
             }
             ColorType::ColorByDistanceValue => None,

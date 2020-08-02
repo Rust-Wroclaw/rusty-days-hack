@@ -42,6 +42,36 @@ impl Point {
         let v = other - self;
         v.dot(v).sqrt()
     }
+
+    pub fn rotate(self, angles: Self) -> Self {
+        let Point {
+            x: alpha,
+            y: beta,
+            z: gamma,
+        } = angles;
+        let (sin_alpha, cos_alpha) = (alpha.sin(), alpha.cos());
+        let (sin_beta, cos_beta) = (beta.sin(), beta.cos());
+        let (sin_gamma, cos_gamma) = (gamma.sin(), gamma.cos());
+        let mut transf_mat = [[0.; 3]; 3];
+        transf_mat[0][0] = cos_alpha * cos_beta;
+        transf_mat[0][1] = cos_alpha * sin_beta * sin_gamma - sin_alpha * cos_gamma;
+        transf_mat[0][2] = cos_alpha * sin_beta * cos_gamma + sin_alpha * sin_gamma;
+        transf_mat[1][0] = sin_alpha * cos_beta;
+        transf_mat[1][1] = sin_alpha * sin_beta * sin_gamma + cos_alpha * cos_gamma;
+        transf_mat[1][2] = sin_alpha * sin_beta * cos_gamma - cos_alpha * sin_gamma;
+        transf_mat[2][0] = -sin_beta;
+        transf_mat[2][1] = cos_beta * sin_gamma;
+        transf_mat[2][2] = cos_beta * cos_gamma;
+        self.apply_transformation(transf_mat)
+    }
+
+    fn apply_transformation(self, mat: [[f64; 3]; 3]) -> Self {
+        Point::new(
+            self.x * mat[0][0] + self.y * mat[0][1] + self.z * mat[0][2],
+            self.x * mat[1][0] + self.y * mat[1][1] + self.z * mat[1][2],
+            self.x * mat[2][0] + self.y * mat[2][1] + self.z * mat[2][2],
+        )
+    }
 }
 
 impl Add for Point {
@@ -101,4 +131,51 @@ impl Rem<f64> for Point {
 
 fn r#mod(a: f64, b: f64) -> f64 {
     a - b * (a / b).floor()
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::f64::consts::PI;
+    const ERROR_THRESHOLD: f64 = 1e-10;
+    const P: Point = Point::new(5., 3., 10.);
+
+    fn assert_if_within_error_threshold(actual: &Point, expected: &Point) {
+        assert!(
+            (actual.x - expected.x).abs() < ERROR_THRESHOLD,
+            "the x values have big diff {:?} - {:?}",
+            actual,
+            expected
+        );
+        assert!(
+            (actual.y - expected.y).abs() < ERROR_THRESHOLD,
+            "the y values have big diff {:?} - {:?}",
+            actual,
+            expected
+        );
+        assert!(
+            (actual.z - expected.z).abs() < ERROR_THRESHOLD,
+            "the z values have big diff {:?} - {:?}",
+            actual,
+            expected
+        );
+    }
+
+    #[test]
+    fn rotation_by_z_axis() {
+        let rotated = P.rotate(Point::new(PI / 2., 0., 0.));
+        assert_if_within_error_threshold(&rotated, &Point::new(-3., 5., 10.));
+    }
+
+    #[test]
+    fn rotation_by_y_axis() {
+        let rotated = P.rotate(Point::new(0., PI / 2., 0.));
+        assert_if_within_error_threshold(&rotated, &Point::new(10., 3., -5.));
+    }
+
+    #[test]
+    fn rotation_by_x_axis() {
+        let rotated = P.rotate(Point::new(0., 0., PI / 2.));
+        assert_if_within_error_threshold(&rotated, &Point::new(5., -10., 3.));
+    }
 }
