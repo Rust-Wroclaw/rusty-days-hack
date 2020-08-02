@@ -120,47 +120,6 @@ impl Fractal for Triangles {
     const CAMERA_POS: Point = Point::new(-2.0, -2.0, -5.0);
 
     fn estimate_distance(mut z: Point) -> f64 {
-        let a1 = Point::new(1., 1., 1.);
-        let a2 = Point::new(-1., -1., 1.);
-        let a3 = Point::new(1., -1., -1.);
-        let a4 = Point::new(-1., 1., -1.);
-        let mut c;
-        let mut n = 0;
-        let mut dist;
-        let mut d;
-        let scale = 2.;
-        let iterations = 10;
-        while n < iterations {
-            c = a1;
-            dist = z.sub(a1).length();
-            d = z.sub(a2).length();
-            if d < dist {
-                c = a2;
-                dist = d;
-            }
-            d = z.sub(a3).length();
-            if d < dist {
-                c = a3;
-                dist = d;
-            }
-            d = z.sub(a4).length();
-            if d < dist {
-                c = a4;
-            }
-            z = z.mul_scalar(scale).sub(c.mul_scalar(scale - 1.0));
-            n += 1;
-        }
-
-        z.length() * scale.powf(-n as f64)
-    }
-}
-
-pub struct TrianglesWithFold;
-
-impl Fractal for TrianglesWithFold {
-    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -5.0);
-
-    fn estimate_distance(mut z: Point) -> f64 {
         let mut n = 0;
         let iterations = 10;
         let offset = Point::new(1., 1., 1.);
@@ -182,6 +141,47 @@ impl Fractal for TrianglesWithFold {
             n += 1;
         }
         z.length() * scale.powf(-n as f64)
+    }
+}
+
+pub struct Squares;
+
+impl Fractal for Squares {
+    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -5.0);
+
+    fn estimate_distance(mut z: Point) -> f64 {
+        let mut r = z.dot(z);
+        let mut i = 0;
+        let iterations = 10;
+        let cx = 1.;
+        let cy = 1.;
+        let cz = 1.;
+        let scale = 3.;
+        let bailout = 1000.;
+        while i < iterations && r < bailout {
+            z = z.abs();
+            if z.x - z.y < 0. {
+                mem::swap(&mut z.x, &mut z.y);
+            }
+            if z.x - z.z < 0. {
+                mem::swap(&mut z.x, &mut z.z);
+            }
+            if z.y - z.z < 0. {
+                mem::swap(&mut z.z, &mut z.y);
+            }
+
+            z.z -= 0.5 * cz * (scale - 1.) / scale;
+            z.z = -z.z.abs();
+            z.z += 0.5 * cz * (scale - 1.) / scale;
+
+            z.x = scale * z.x - cx * (scale - 1.);
+            z.y = scale * z.y - cy * (scale - 1.);
+            z.z *= scale;
+
+            r = z.dot(z);
+            i += 1;
+        }
+        r.sqrt() * scale.powf(-i as f64)
     }
 }
 

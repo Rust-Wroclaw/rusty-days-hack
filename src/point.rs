@@ -10,44 +10,48 @@ impl Point {
         Self { x, y, z }
     }
 
-    pub fn mul_scalar(&self, value: f64) -> Point {
-        Point::new(self.x * value, self.y * value, self.z * value)
+    pub fn mul_scalar(&self, value: f64) -> Self {
+        Self::new(self.x * value, self.y * value, self.z * value)
     }
 
-    pub fn add(&self, other: Point) -> Point {
-        Point::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    pub fn add(&self, other: Self) -> Self {
+        Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 
-    pub fn add_scalar(&self, value: f64) -> Point {
-        Point::new(self.x + value, self.y + value, self.z + value)
+    pub fn add_scalar(&self, value: f64) -> Self {
+        Self::new(self.x + value, self.y + value, self.z + value)
     }
 
-    pub fn sub(&self, other: Point) -> Point {
-        Point::new(self.x - other.x, self.y - other.y, self.z - other.z)
+    pub fn sub(&self, other: Self) -> Self {
+        Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 
     pub fn length(&self) -> f64 {
         1.0 / self.dot(*self).powf(-0.5)
     }
 
-    pub fn dot(&self, other: Point) -> f64 {
+    pub fn dot(&self, other: Self) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
-    pub fn normalize(&self) -> Point {
+    pub fn normalize(&self) -> Self {
         self.mul_scalar(self.dot(*self).powf(-0.5))
     }
 
-    pub fn cross(&self, other: Point) -> Point {
-        Point::new(self.y * other.z, self.z * other.x, self.x * other.y).sub(Point::new(
+    pub fn cross(&self, other: Self) -> Self {
+        Self::new(self.y * other.z, self.z * other.x, self.x * other.y).sub(Self::new(
             self.z * other.y,
             self.x * other.z,
             self.y * other.x,
         ))
     }
 
-    pub fn r#mod(&self, n: f64) -> Point {
-        Point::new(r#mod(self.x, n), r#mod(self.y, n), r#mod(self.z, n))
+    pub fn r#mod(&self, n: f64) -> Self {
+        Self::new(r#mod(self.x, n), r#mod(self.y, n), r#mod(self.z, n))
+    }
+
+    pub fn abs(&self) -> Self {
+        Self::new(self.x.abs(), self.y.abs(), self.z.abs())
     }
 }
 

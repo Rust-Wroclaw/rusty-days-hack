@@ -15,7 +15,7 @@ const SSAA: u32 = 2;
 fn main() {
     create_images::<fractals::Spheres>();
     create_images::<fractals::Triangles>();
-    create_images::<fractals::TrianglesWithFold>();
+    create_images::<fractals::Squares>();
 }
 
 fn create_images<T: fractals::Fractal>() {
