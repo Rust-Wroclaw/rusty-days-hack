@@ -33,7 +33,7 @@ pub trait Fractal {
     fn get_camera_ray_dir(uv: Point, p: Point, l: Point, z: f64) -> Point {
         let f = l.sub(p).normalize();
         let r = Point::new(0.0, 1.0, 0.0).cross(f).normalize();
-        let u = f.cross(r);
+        let u = f.cross(r).normalize();
         let c = p.add(f.mul_scalar(z));
         let i = c.add(r.mul_scalar(uv.x)).add(u.mul_scalar(uv.y));
         i.sub(p).normalize()
@@ -102,7 +102,7 @@ pub trait Fractal {
     fn get_normal(p: Point) -> Point {
         let d = Self::estimate_distance(p);
         let ex = 0.001;
-        let ey = 0.0;
+        let ey = 0.01;
         Point::new(
             d - Self::estimate_distance(Point::new(p.x - ex, p.y - ey, p.z - ey)),
             d - Self::estimate_distance(Point::new(p.x - ey, p.y - ex, p.z - ey)),
