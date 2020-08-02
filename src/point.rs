@@ -3,7 +3,7 @@ use std::ops::Mul;
 use std::ops::Rem;
 use std::ops::Sub;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, PartialEq, Default, Debug)]
 pub struct Point {
     pub x: f64,
     pub y: f64,
@@ -12,6 +12,7 @@ pub struct Point {
 
 impl Point {
     pub const ZERO: Point = Point::new(0.0, 0.0, 0.0);
+    pub const ONE: Point = Point::new(1.0, 1.0, 1.0);
 
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
@@ -43,12 +44,12 @@ impl Point {
         v.dot(v).sqrt()
     }
 
-    pub fn rotate(self, angles: Self) -> Self {
+    pub fn create_transformation(self) -> [[f64; 3]; 3] {
         let Point {
             x: alpha,
             y: beta,
             z: gamma,
-        } = angles;
+        } = self;
         let (sin_alpha, cos_alpha) = (alpha.sin(), alpha.cos());
         let (sin_beta, cos_beta) = (beta.sin(), beta.cos());
         let (sin_gamma, cos_gamma) = (gamma.sin(), gamma.cos());
@@ -62,10 +63,10 @@ impl Point {
         transf_mat[2][0] = -sin_beta;
         transf_mat[2][1] = cos_beta * sin_gamma;
         transf_mat[2][2] = cos_beta * cos_gamma;
-        self.apply_transformation(transf_mat)
+        transf_mat
     }
 
-    fn apply_transformation(self, mat: [[f64; 3]; 3]) -> Self {
+    pub fn apply_transformation(self, mat: [[f64; 3]; 3]) -> Self {
         Point::new(
             self.x * mat[0][0] + self.y * mat[0][1] + self.z * mat[0][2],
             self.x * mat[1][0] + self.y * mat[1][1] + self.z * mat[1][2],
@@ -163,19 +164,19 @@ mod test {
 
     #[test]
     fn rotation_by_z_axis() {
-        let rotated = P.rotate(Point::new(PI / 2., 0., 0.));
+        let rotated = P.apply_transformation(Point::new(PI / 2., 0., 0.).create_transformation());
         assert_if_within_error_threshold(&rotated, &Point::new(-3., 5., 10.));
     }
 
     #[test]
     fn rotation_by_y_axis() {
-        let rotated = P.rotate(Point::new(0., PI / 2., 0.));
+        let rotated = P.apply_transformation(Point::new(0., PI / 2., 0.).create_transformation());
         assert_if_within_error_threshold(&rotated, &Point::new(10., 3., -5.));
     }
 
     #[test]
     fn rotation_by_x_axis() {
-        let rotated = P.rotate(Point::new(0., 0., PI / 2.));
+        let rotated = P.apply_transformation(Point::new(0., 0., PI / 2.).create_transformation());
         assert_if_within_error_threshold(&rotated, &Point::new(5., -10., 3.));
     }
 }
