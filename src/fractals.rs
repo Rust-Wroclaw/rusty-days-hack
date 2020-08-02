@@ -51,7 +51,7 @@ pub trait Fractal {
 
     fn get_color(color_type: ColorType, p: Point) -> Rgb<u8> {
         match color_type {
-            ColorType::BlackAndWhite => {
+            ColorType::Grayscale => {
                 let mut light_val = 0.0;
                 if p.length() < Self::MAX_DIST {
                     light_val = Self::get_light(p);
@@ -61,14 +61,14 @@ pub trait Fractal {
                 let light_val = (light_val * 256.0) as u8;
                 Rgb([light_val, light_val, light_val])
             }
-            ColorType::ColorByDistanceValue => {
+            ColorType::Distance => {
                 let color_value = (p.length() / Self::MAX_DIST * 255.0f64.powf(3.)) as usize;
                 let r = ((color_value >> 16) & 255) as u8;
                 let g = ((color_value >> 8) & 255) as u8;
                 let b = (color_value & 255) as u8;
                 Rgb([r, g, b])
             }
-            ColorType::ColorDiffuse => {
+            ColorType::Normal => {
                 let half_point = Point::new(0.5, 0.5, 0.5);
                 let color = Self::get_normal(p) * half_point + half_point;
                 let r = color.x * 255.;
@@ -86,7 +86,7 @@ pub trait Fractal {
                     (b * light_val) as u8,
                 ])
             }
-            ColorType::ColorFixed => {
+            ColorType::SingleColor => {
                 let (r, g, b) = (80., 140., 50.);
                 let mut light_val = 0.0;
                 if p.length() < Self::MAX_DIST {
@@ -126,16 +126,16 @@ pub trait Fractal {
 pub struct Spheres;
 
 impl Fractal for Spheres {
-    const CAMERA_POS: Point = Point::new(3.2, 4.0, -3.9);
+    const CAMERA_POS: Point = Point::new(3.2, 4.0, -3.85);
 
     fn estimate_distance(p: Point) -> f64 {
         ((p % 1.) - 0.5).length() - 0.15
     }
 }
 
-pub struct Triangles;
+pub struct Tetrahedron;
 
-impl Fractal for Triangles {
+impl Fractal for Tetrahedron {
     const MIN_DIST: f64 = 0.002;
     const CAMERA_POS: Point = Point::new(1.6, -0.8, -2.1);
     const CAMERA_DEST: Point = Point::new(0.0, -0.15, 0.0);
@@ -163,9 +163,9 @@ impl Fractal for Triangles {
     }
 }
 
-pub struct Squares;
+pub struct Cube;
 
-impl Fractal for Squares {
+impl Fractal for Cube {
     const CAMERA_POS: Point = Point::new(-1.8, -1.8, -2.7);
     const CAMERA_DEST: Point = Point::new(0.0, 0.3, 0.0);
 
@@ -217,19 +217,19 @@ fn invert_and_swap(x: &mut f64, y: &mut f64) {
 
 #[derive(Copy, Clone, Debug)]
 pub enum ColorType {
-    BlackAndWhite,
-    ColorByDistanceValue,
-    ColorDiffuse,
-    ColorFixed,
+    Grayscale,
+    Distance,
+    Normal,
+    SingleColor,
 }
 
 impl ColorType {
     fn background_color(&self, uv: Point) -> Option<Rgb<u8>> {
         match self {
-            ColorType::BlackAndWhite | ColorType::ColorDiffuse | ColorType::ColorFixed => {
+            ColorType::Grayscale | ColorType::Normal | ColorType::SingleColor => {
                 Some(Rgb([(100.0 - uv.distance(Point::ZERO) * 50.0) as u8; 3]))
             }
-            ColorType::ColorByDistanceValue => None,
+            ColorType::Distance => None,
         }
     }
 }
