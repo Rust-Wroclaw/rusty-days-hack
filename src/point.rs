@@ -37,29 +37,6 @@ impl Point {
     }
 }
 
-#[deprecated]
-impl Point {
-    pub fn mul_scalar(self, value: f64) -> Self {
-        self * value
-    }
-
-    pub fn add(self, other: Self) -> Self {
-        self + other
-    }
-
-    pub fn add_scalar(self, value: f64) -> Self {
-        self + value
-    }
-
-    pub fn sub(self, other: Self) -> Self {
-        self - other
-    }
-
-    pub fn r#mod(self, n: f64) -> Self {
-        self % n
-    }
-}
-
 impl Add for Point {
     type Output = Self;
 
@@ -81,6 +58,13 @@ impl Sub for Point {
 
     fn sub(self, rhs: Self) -> Self {
         Point::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+}
+impl Sub<f64> for Point {
+    type Output = Self;
+
+    fn sub(self, val: f64) -> Self {
+        Point::new(self.x - val, self.y - val, self.z - val)
     }
 }
 

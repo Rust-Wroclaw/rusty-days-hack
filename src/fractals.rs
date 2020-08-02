@@ -19,22 +19,22 @@ pub trait Fractal {
         let rd = Self::get_camera_ray_dir(uv, Self::CAMERA_POS, Point::new(0.0, 0.0, 0.0), 1.);
         let d = Self::cast_ray(Self::CAMERA_POS, rd);
 
-        Self::get_color(color_type, Self::CAMERA_POS.add(rd.mul_scalar(d)))
+        Self::get_color(color_type, Self::CAMERA_POS + rd * d)
     }
 
     fn get_camera_ray_dir(uv: Point, p: Point, l: Point, z: f64) -> Point {
-        let f = l.sub(p).normalize();
+        let f = (l - p).normalize();
         let r = Point::new(0.0, 1.0, 0.0).cross(f).normalize();
         let u = f.cross(r).normalize();
-        let c = p.add(f.mul_scalar(z));
-        let i = c.add(r.mul_scalar(uv.x)).add(u.mul_scalar(uv.y));
-        i.sub(p).normalize()
+        let c = p + f * z;
+        let i = c + r * uv.x + u * uv.y;
+        (i - p).normalize()
     }
 
     fn cast_ray(ro: Point, rd: Point) -> f64 {
         let mut t = 0.0;
         for _ in 0..MAX_TRACE_STEPS {
-            let p = ro.add(rd.mul_scalar(t));
+            let p = ro + rd * t;
             let res = Self::estimate_distance(p);
             t += res;
             if res < MIN_DIST || t > MAX_DIST {
@@ -85,8 +85,8 @@ pub trait Fractal {
     }
 
     fn get_light(p: Point) -> f64 {
-        let light_pos = Self::CAMERA_POS.add(Point::new(2.0, 2.0, 0.0));
-        let l = light_pos.sub(p).normalize();
+        let light_pos = Self::CAMERA_POS + Point::new(2.0, 2.0, 0.0);
+        let l = (light_pos - p).normalize();
         let n = Self::get_normal(p);
         (n.dot(l) * 0.5 + 0.5).max(0.).min(1.)
     }
@@ -110,7 +110,7 @@ impl Fractal for Spheres {
     const CAMERA_POS: Point = Point::new(3.0, 4.0, -4.0);
 
     fn estimate_distance(p: Point) -> f64 {
-        p.r#mod(1.).add_scalar(-0.5).length() - 0.15
+        ((p % 1.) - 0.5).length() - 0.15
     }
 }
 
@@ -137,7 +137,7 @@ impl Fractal for Triangles {
                 // fold 3
                 invert_and_swap(&mut z.z, &mut z.y);
             }
-            z = z.mul_scalar(scale).sub(offset.mul_scalar(scale - 1.0));
+            z = z * scale - offset * (scale - 1.0);
             n += 1;
         }
         z.length() * scale.powf(-n as f64)
