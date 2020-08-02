@@ -14,16 +14,12 @@ const SSAA: u32 = 2;
 
 fn main() {
     create_images::<fractals::Spheres>();
-    create_images::<fractals::Triangles>();
-    create_images::<fractals::Squares>();
+    create_images::<fractals::Tetrahedron>();
+    create_images::<fractals::Cube>();
 }
 
 fn create_images<T: fractals::Fractal>() {
-    for color_type in &[
-        ColorType::BlackAndWhite,
-        ColorType::ColorByDistanceValue,
-        ColorType::ColorDiffuse,
-    ] {
+    for color_type in &[ColorType::Grayscale, ColorType::Distance, ColorType::Normal] {
         create_image::<T>(*color_type)
     }
 }
@@ -33,7 +29,8 @@ fn create_image<T: fractals::Fractal>(color_type: ColorType) {
         "fractal-{}-{:?}.png",
         std::any::type_name::<T>().split(':').last().unwrap(),
         color_type
-    );
+    )
+    .to_lowercase();
     println!("Creating {}", filename);
     let instant = Instant::now();
 
