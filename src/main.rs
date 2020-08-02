@@ -1,8 +1,9 @@
 use image::{ImageBuffer, Rgb, RgbImage};
+use std::time::Instant;
 
 const MAX_TRACE_STEPS: usize = 200;
 const MIN_DIST: f64 = 0.001;
-const MAX_DIST: f64 = 100.0;
+const MAX_DIST: f64 = 1000.0;
 
 fn main() {
     for fractal_type in &[
@@ -10,11 +11,31 @@ fn main() {
         FractalType::Triangles,
         FractalType::TrianglesWithFold,
     ] {
-        let img_buffer = img(800, 800, *fractal_type);
-        img_buffer
-            .save(&format!("fractal-{:?}.png", fractal_type))
-            .unwrap();
+        for color_type in &[
+            ColorType::BlackAndWhite,
+            ColorType::Colored,
+            ColorType::ColoredWithShades,
+        ] {
+            let instant = Instant::now();
+            let img_buffer = img(800, 800, *fractal_type, *color_type);
+            img_buffer
+                .save(&format!("fractal-{:?}-{:?}.png", fractal_type, color_type))
+                .unwrap();
+            println!(
+                "Completed image for {:?} - {:?} in {:?} ms",
+                fractal_type,
+                color_type,
+                instant.elapsed().as_millis()
+            );
+        }
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+enum ColorType {
+    BlackAndWhite,
+    Colored,
+    ColoredWithShades,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -37,7 +58,12 @@ impl FractalType {
     }
 }
 
-fn img(width: u32, height: u32, fractal_type: FractalType) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
+fn img(
+    width: u32,
+    height: u32,
+    fractal_type: FractalType,
+    color_type: ColorType,
+) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     let mut img: RgbImage = ImageBuffer::new(width, height);
     let screen_dim = Point::new(width as f64, height as f64, 0.0);
 
@@ -46,13 +72,19 @@ fn img(width: u32, height: u32, fractal_type: FractalType) -> ImageBuffer<Rgb<u8
             Point::new(x as f64, y as f64, 0.0),
             screen_dim,
             fractal_type,
+            color_type,
         );
     }
 
     img
 }
 
-fn render(p: Point, screen_dim: Point, fractal_type: FractalType) -> Rgb<u8> {
+fn render(
+    p: Point,
+    screen_dim: Point,
+    fractal_type: FractalType,
+    color_type: ColorType,
+) -> Rgb<u8> {
     let uv = Point::new(
         (p.x - 0.5 * screen_dim.x) / screen_dim.y,
         (p.y - 0.5 * screen_dim.y) / screen_dim.y,
@@ -60,17 +92,9 @@ fn render(p: Point, screen_dim: Point, fractal_type: FractalType) -> Rgb<u8> {
     );
 
     let rd = get_camera_ray_dir(uv, fractal_type.camera_pos(), Point::new(0.0, 0.0, 0.0), 1.);
-    let d = cast_ray(fractal_type.camera_pos(), rd, fractal_type);
+    let color = cast_ray(fractal_type.camera_pos(), rd, fractal_type, color_type);
 
-    let mut col = 0.0;
-    if d < MAX_DIST {
-        let p = fractal_type.camera_pos().add(rd.mul_scalar(d));
-        col = get_light(fractal_type, p);
-    }
-    col = col.powf(0.4545);
-
-    let col = (col * 256.0) as u8;
-    Rgb([col, col, col])
+    color
 }
 
 fn get_camera_ray_dir(uv: Point, p: Point, l: Point, z: f64) -> Point {
@@ -82,22 +106,68 @@ fn get_camera_ray_dir(uv: Point, p: Point, l: Point, z: f64) -> Point {
     i.sub(p).normalize()
 }
 
-fn cast_ray(ro: Point, rd: Point, fractal_type: FractalType) -> f64 {
-    let mut t = 0.0;
-    for _ in 0..MAX_TRACE_STEPS {
-        let p = ro.add(rd.mul_scalar(t));
+fn cast_ray(ro: Point, rd: Point, fractal_type: FractalType, color_type: ColorType) -> Rgb<u8> {
+    let mut dist = 0.0;
+    let mut i = 0;
+    while i < MAX_TRACE_STEPS {
+        let p = ro.add(rd.mul_scalar(dist));
         let res = match fractal_type {
             FractalType::Spheres => estimate_distance(fractal_type, p),
             FractalType::Triangles => estimate_distance(fractal_type, p),
             FractalType::TrianglesWithFold => estimate_distance(fractal_type, p),
         };
-        t += res;
-        if res < MIN_DIST || t > MAX_DIST {
+        dist += res;
+        if res < MIN_DIST || dist > MAX_DIST {
             break;
         }
+        i += 1;
     }
 
-    t
+    get_color(
+        fractal_type,
+        color_type,
+        fractal_type.camera_pos().add(rd.mul_scalar(dist)),
+    )
+}
+
+fn get_color(fractal_type: FractalType, color_type: ColorType, p: Point) -> Rgb<u8> {
+    match color_type {
+        ColorType::BlackAndWhite => {
+            let mut light_val = 0.0;
+            if p.length() < MAX_DIST {
+                light_val = get_light(fractal_type, p);
+            }
+            light_val = light_val.powf(0.4545);
+
+            let light_val = (light_val * 256.0) as u8;
+            Rgb([light_val, light_val, light_val])
+        }
+        ColorType::Colored => {
+            let color_value = (p.length() / MAX_DIST * 255.0f64.powf(3.)) as usize;
+            let r = ((color_value >> 16) & 255) as u8;
+            let g = ((color_value >> 8) & 255) as u8;
+            let b = (color_value & 255) as u8;
+            Rgb([r, g, b])
+        }
+        ColorType::ColoredWithShades => {
+            let color_value = (p.length() / MAX_DIST * 255.0f64.powf(3.)) as usize;
+            let r = ((color_value >> 16) & 255) as f64;
+            let g = ((color_value >> 8) & 255) as f64;
+            let b = (color_value & 255) as f64;
+            let mut light_val = 0.0;
+            if p.length() < MAX_DIST {
+                light_val = get_light(fractal_type, p);
+                light_val = light_val.powf(0.4545);
+                light_val *= 256.0;
+            }
+
+            Rgb([
+                (r * light_val) as u8,
+                (g * light_val) as u8,
+                (b * light_val) as u8,
+            ])
+        }
+    }
 }
 
 fn get_light(fractal_type: FractalType, p: Point) -> f64 {
@@ -110,7 +180,7 @@ fn get_light(fractal_type: FractalType, p: Point) -> f64 {
 fn get_normal(fractal_type: FractalType, p: Point) -> Point {
     let d = estimate_distance(fractal_type, p);
     let ex = 0.001;
-    let ey = 0.0;
+    let ey = 0.01;
 
     Point::new(
         d - estimate_distance(fractal_type, Point::new(p.x - ex, p.y - ey, p.z - ey)),
