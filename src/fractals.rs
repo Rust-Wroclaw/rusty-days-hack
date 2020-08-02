@@ -1,5 +1,6 @@
 use crate::point::Point;
 use image::{ImageBuffer, Rgb, RgbImage};
+use std::mem;
 
 const MAX_TRACE_STEPS: usize = 1000;
 const MIN_DIST: f64 = 0.001;
@@ -175,22 +176,28 @@ impl Fractal for TrianglesWithFold {
         let scale = 2.0;
         while n < iterations {
             if z.x + z.y < 0. {
-                z.x = z.x.abs();
-                z.y = z.y.abs();
-            } // fold 1
+                // fold 1
+                invert_and_swap(&mut z.x, &mut z.y);
+            }
             if z.x + z.z < 0. {
-                z.x = z.x.abs();
-                z.z = z.z.abs();
-            } // fold 2
+                // fold 2
+                invert_and_swap(&mut z.x, &mut z.z);
+            }
             if z.y + z.z < 0. {
-                z.z = z.z.abs();
-                z.y = z.y.abs();
-            } // fold 3
+                // fold 3
+                invert_and_swap(&mut z.z, &mut z.y);
+            }
             z = z.mul_scalar(scale).sub(offset.mul_scalar(scale - 1.0));
             n += 1;
         }
         z.length() * scale.powf(-n as f64)
     }
+}
+
+fn invert_and_swap(x: &mut f64, y: &mut f64) {
+    *x *= -1.;
+    *y *= -1.;
+    mem::swap(x, y);
 }
 
 #[derive(Copy, Clone, Debug)]
