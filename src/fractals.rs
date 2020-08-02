@@ -117,7 +117,7 @@ impl Fractal for Spheres {
 pub struct Triangles;
 
 impl Fractal for Triangles {
-    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -5.0);
+    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -3.0);
 
     fn estimate_distance(mut z: Point) -> f64 {
         let mut n = 0;
@@ -147,7 +147,7 @@ impl Fractal for Triangles {
 pub struct Squares;
 
 impl Fractal for Squares {
-    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -5.0);
+    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -3.0);
 
     fn estimate_distance(mut z: Point) -> f64 {
         let mut r = z.dot(z);
