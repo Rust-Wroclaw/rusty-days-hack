@@ -1,5 +1,5 @@
 use crate::point::Point;
-use image::{ImageBuffer, Rgb, RgbImage};
+use image::Rgb;
 use std::mem;
 
 const MAX_TRACE_STEPS: usize = 1000;
@@ -10,16 +10,7 @@ pub trait Fractal {
     const CAMERA_POS: Point;
     fn estimate_distance(p: Point) -> f64;
 
-    fn img(width: u32, height: u32, color_type: &ColorType) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
-        let mut img: RgbImage = ImageBuffer::new(width, height);
-        let screen_dim = Point::new(width as f64, height as f64, 0.0);
-        for (x, y, pixel) in img.enumerate_pixels_mut() {
-            *pixel = Self::render(Point::new(x as f64, y as f64, 0.0), screen_dim, color_type);
-        }
-        img
-    }
-
-    fn render(p: Point, screen_dim: Point, color_type: &ColorType) -> Rgb<u8> {
+    fn render(p: Point, screen_dim: Point, color_type: ColorType) -> Rgb<u8> {
         let uv = Point::new(
             (p.x - 0.5 * screen_dim.x) / screen_dim.y,
             (p.y - 0.5 * screen_dim.y) / screen_dim.y,
@@ -53,7 +44,7 @@ pub trait Fractal {
         t
     }
 
-    fn get_color(color_type: &ColorType, p: Point) -> Rgb<u8> {
+    fn get_color(color_type: ColorType, p: Point) -> Rgb<u8> {
         match color_type {
             ColorType::BlackAndWhite => {
                 let mut light_val = 0.0;
