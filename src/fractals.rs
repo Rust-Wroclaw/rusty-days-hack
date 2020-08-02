@@ -2,12 +2,12 @@ use crate::point::Point;
 use image::Rgb;
 use std::mem;
 
-const MAX_TRACE_STEPS: usize = 1000;
-const MIN_DIST: f64 = 0.001;
-const MAX_DIST: f64 = 1000.0;
-
 pub trait Fractal {
+    const MAX_TRACE_STEPS: usize = 1000;
+    const MIN_DIST: f64 = 0.001;
+    const MAX_DIST: f64 = 1000.0;
     const CAMERA_POS: Point;
+    const CAMERA_DEST: Point = Point::ZERO;
     fn estimate_distance(p: Point) -> f64;
 
     fn render(p: Point, screen_dim: Point, color_type: ColorType) -> Rgb<u8> {
@@ -16,7 +16,7 @@ pub trait Fractal {
             (p.y - 0.5 * screen_dim.y) / screen_dim.y,
             0.0,
         );
-        let rd = Self::get_camera_ray_dir(uv, Self::CAMERA_POS, Point::new(0.0, 0.0, 0.0), 1.);
+        let rd = Self::get_camera_ray_dir(uv, Self::CAMERA_POS, Self::CAMERA_DEST, 1.);
         let d = Self::cast_ray(Self::CAMERA_POS, rd);
 
         Self::get_color(color_type, Self::CAMERA_POS + rd * d)
@@ -33,11 +33,11 @@ pub trait Fractal {
 
     fn cast_ray(ro: Point, rd: Point) -> f64 {
         let mut t = 0.0;
-        for _ in 0..MAX_TRACE_STEPS {
+        for _ in 0..Self::MAX_TRACE_STEPS {
             let p = ro + rd * t;
             let res = Self::estimate_distance(p);
             t += res;
-            if res < MIN_DIST || t > MAX_DIST {
+            if res < Self::MIN_DIST || t > Self::MAX_DIST {
                 break;
             }
         }
@@ -48,7 +48,7 @@ pub trait Fractal {
         match color_type {
             ColorType::BlackAndWhite => {
                 let mut light_val = 0.0;
-                if p.length() < MAX_DIST {
+                if p.length() < Self::MAX_DIST {
                     light_val = Self::get_light(p);
                 }
                 light_val = light_val.powf(0.4545);
@@ -57,7 +57,7 @@ pub trait Fractal {
                 Rgb([light_val, light_val, light_val])
             }
             ColorType::ColorByDistanceValue => {
-                let color_value = (p.length() / MAX_DIST * 255.0f64.powf(3.)) as usize;
+                let color_value = (p.length() / Self::MAX_DIST * 255.0f64.powf(3.)) as usize;
                 let r = ((color_value >> 16) & 255) as u8;
                 let g = ((color_value >> 8) & 255) as u8;
                 let b = (color_value & 255) as u8;
@@ -70,7 +70,7 @@ pub trait Fractal {
                 let g = color.y * 255.;
                 let b = color.z * 255.;
                 let mut light_val = 0.0;
-                if p.length() < MAX_DIST {
+                if p.length() < Self::MAX_DIST {
                     light_val = Self::get_light(p);
                     light_val = light_val.powf(0.4545);
                 }
@@ -107,7 +107,7 @@ pub trait Fractal {
 pub struct Spheres;
 
 impl Fractal for Spheres {
-    const CAMERA_POS: Point = Point::new(3.0, 4.0, -4.0);
+    const CAMERA_POS: Point = Point::new(3.2, 4.0, -3.9);
 
     fn estimate_distance(p: Point) -> f64 {
         ((p % 1.) - 0.5).length() - 0.15
@@ -117,12 +117,14 @@ impl Fractal for Spheres {
 pub struct Triangles;
 
 impl Fractal for Triangles {
-    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -3.0);
+    const MIN_DIST: f64 = 0.002;
+    const CAMERA_POS: Point = Point::new(1.6, -0.8, -2.1);
+    const CAMERA_DEST: Point = Point::new(0.0, -0.15, 0.0);
 
     fn estimate_distance(mut z: Point) -> f64 {
         let mut n = 0;
         let iterations = 10;
-        let offset = Point::new(1., 1., 1.);
+        let offset = 1.0;
         let scale = 2.0;
         while n < iterations {
             if z.x + z.y < 0. {
@@ -147,7 +149,8 @@ impl Fractal for Triangles {
 pub struct Squares;
 
 impl Fractal for Squares {
-    const CAMERA_POS: Point = Point::new(-2.0, -2.0, -3.0);
+    const CAMERA_POS: Point = Point::new(-1.8, -1.8, -2.7);
+    const CAMERA_DEST: Point = Point::new(0.0, 0.3, 0.0);
 
     fn estimate_distance(mut z: Point) -> f64 {
         let mut r = z.dot(z);
