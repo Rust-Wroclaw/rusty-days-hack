@@ -19,7 +19,12 @@ pub trait Fractal {
         let rd = Self::get_camera_ray_dir(uv, Self::CAMERA_POS, Self::CAMERA_DEST, 1.);
         let d = Self::cast_ray(Self::CAMERA_POS, rd);
 
-        Self::get_color(color_type, Self::CAMERA_POS + rd * d)
+        if d < Self::MAX_DIST {
+            None
+        } else {
+            color_type.background_color(uv)
+        }
+        .unwrap_or_else(|| Self::get_color(color_type, Self::CAMERA_POS + rd * d))
     }
 
     fn get_camera_ray_dir(uv: Point, p: Point, l: Point, z: f64) -> Point {
@@ -94,7 +99,7 @@ pub trait Fractal {
     fn get_normal(p: Point) -> Point {
         let d = Self::estimate_distance(p);
         let ex = 0.001;
-        let ey = 0.01;
+        let ey = 0.0;
         Point::new(
             d - Self::estimate_distance(Point::new(p.x - ex, p.y - ey, p.z - ey)),
             d - Self::estimate_distance(Point::new(p.x - ey, p.y - ex, p.z - ey)),
@@ -199,4 +204,15 @@ pub enum ColorType {
     BlackAndWhite,
     ColorByDistanceValue,
     ColorDiffuse,
+}
+
+impl ColorType {
+    fn background_color(&self, uv: Point) -> Option<Rgb<u8>> {
+        match self {
+            ColorType::BlackAndWhite | ColorType::ColorDiffuse => {
+                Some(Rgb([(100.0 - uv.distance(Point::ZERO) * 50.0) as u8; 3]))
+            }
+            ColorType::ColorByDistanceValue => None,
+        }
+    }
 }

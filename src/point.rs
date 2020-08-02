@@ -34,8 +34,13 @@ impl Point {
             - Point::new(self.z * other.y, self.x * other.z, self.y * other.x)
     }
 
-    pub fn abs(&self) -> Self {
+    pub fn abs(self) -> Self {
         Point::new(self.x.abs(), self.y.abs(), self.z.abs())
+    }
+
+    pub fn distance(self, other: Self) -> f64 {
+        let v = other - self;
+        v.dot(v).sqrt()
     }
 }
 
