@@ -68,6 +68,14 @@ impl Sub<f64> for Point {
     }
 }
 
+impl Mul for Point {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self {
+        Point::new(self.x * rhs.x, self.y * rhs.y, self.z * rhs.z)
+    }
+}
+
 impl Mul<f64> for Point {
     type Output = Self;
 

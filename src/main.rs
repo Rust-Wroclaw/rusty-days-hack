@@ -21,8 +21,8 @@ fn main() {
 fn create_images<T: fractals::Fractal>() {
     for color_type in &[
         ColorType::BlackAndWhite,
-        ColorType::Colored,
-        ColorType::ColoredWithShades,
+        ColorType::ColorByDistanceValue,
+        ColorType::ColorDiffuse,
     ] {
         create_image::<T>(*color_type)
     }

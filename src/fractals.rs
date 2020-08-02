@@ -56,23 +56,23 @@ pub trait Fractal {
                 let light_val = (light_val * 256.0) as u8;
                 Rgb([light_val, light_val, light_val])
             }
-            ColorType::Colored => {
+            ColorType::ColorByDistanceValue => {
                 let color_value = (p.length() / MAX_DIST * 255.0f64.powf(3.)) as usize;
                 let r = ((color_value >> 16) & 255) as u8;
                 let g = ((color_value >> 8) & 255) as u8;
                 let b = (color_value & 255) as u8;
                 Rgb([r, g, b])
             }
-            ColorType::ColoredWithShades => {
-                let color_value = (p.length() / MAX_DIST * 255.0f64.powf(3.)) as usize;
-                let r = ((color_value >> 16) & 255) as f64;
-                let g = ((color_value >> 8) & 255) as f64;
-                let b = (color_value & 255) as f64;
+            ColorType::ColorDiffuse => {
+                let half_point = Point::new(0.5, 0.5, 0.5);
+                let color = Self::get_normal(p) * half_point + half_point;
+                let r = color.x * 255.;
+                let g = color.y * 255.;
+                let b = color.z * 255.;
                 let mut light_val = 0.0;
                 if p.length() < MAX_DIST {
                     light_val = Self::get_light(p);
                     light_val = light_val.powf(0.4545);
-                    light_val *= 256.0;
                 }
 
                 Rgb([
@@ -194,6 +194,6 @@ fn invert_and_swap(x: &mut f64, y: &mut f64) {
 #[derive(Copy, Clone, Debug)]
 pub enum ColorType {
     BlackAndWhite,
-    Colored,
-    ColoredWithShades,
+    ColorByDistanceValue,
+    ColorDiffuse,
 }
