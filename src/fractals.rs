@@ -146,7 +146,8 @@ impl Fractal for Tetrahedron {
         let offset = 1.0;
         let scale = 2.0;
         while n < iterations {
-            z = z.rotate(Point::new(0.2, 0., 0.3));
+            // To modify the shape, rotation can be added
+            // z = z.rotate(Point::new(0.2, 0., 0.3));
             if z.x + z.y < 0. {
                 invert_and_swap(&mut z.x, &mut z.y);
             }
@@ -173,13 +174,14 @@ impl Fractal for Cube {
         let mut r = z.dot(z);
         let mut i = 0;
         let iterations = 10;
-        let cx = 2.;
-        let cy = 0.8;
-        let cz = 1.5;
+        let cx = 1.;
+        let cy = 1.;
+        let cz = 1.;
         let scale = 3.;
         let bailout = 1000.;
         while i < iterations && r < bailout {
-            z = z.rotate(Point::new(0., 0.4, 0.));
+            // To modify the shape, rotation can be added
+            // z = z.rotate(Point::new(0., 0.4, 0.));
 
             z = z.abs();
             if z.x - z.y < 0. {
@@ -196,7 +198,8 @@ impl Fractal for Cube {
             z.z = -z.z.abs();
             z.z += 0.5 * cz * (scale - 1.) / scale;
 
-            z = z.rotate(Point::new(0., 0., 0.2));
+            // To get even more unusual shapes, add more rotation
+            // z = z.rotate(Point::new(0., 0., 0.2));
 
             z.x = scale * z.x - cx * (scale - 1.);
             z.y = scale * z.y - cy * (scale - 1.);
